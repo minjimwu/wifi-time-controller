@@ -15,8 +15,6 @@ sudo systemctl stop wifi-sleep.timer 2>/dev/null || true
 sudo systemctl disable wifi-timer.service 2>/dev/null || true
 sudo systemctl disable wifi-sleep.timer 2>/dev/null || true
 sudo systemctl disable wifi-schedule.service 2>/dev/null || true
-sudo systemctl stop wifi-wowlan.service 2>/dev/null || true
-sudo systemctl disable wifi-wowlan.service 2>/dev/null || true
 
 # 2. Remove systemd unit files
 echo "[2/4] Removing systemd units..."
@@ -24,7 +22,6 @@ sudo rm -f /etc/systemd/system/wifi-timer.service
 sudo rm -f /etc/systemd/system/wifi-schedule.service
 sudo rm -f /etc/systemd/system/wifi-sleep.service
 sudo rm -f /etc/systemd/system/wifi-sleep.timer
-sudo rm -f /etc/systemd/system/wifi-wowlan.service
 sudo systemctl daemon-reload
 
 # 3. Clean up iptables

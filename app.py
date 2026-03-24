@@ -112,8 +112,8 @@ def usb_reset():
 def watchdog_loop():
     """Monitor dmesg for firmware errors and auto-reset the USB adapter."""
     error_count = 0
-    CHECK_INTERVAL = 30  # seconds between checks
-    ERROR_THRESHOLD = 5  # errors to trigger reset
+    CHECK_INTERVAL = 10  # seconds between checks
+    ERROR_THRESHOLD = 3  # errors to trigger reset
     COOLDOWN = 120       # seconds after reset before checking again
     last_check = time.monotonic()
 

@@ -36,7 +36,6 @@ for unit in wifi-timer.service wifi-schedule.service wifi-sleep.service; do
         | sudo tee /etc/systemd/system/$unit > /dev/null
 done
 sudo cp "$DIR/wifi-sleep.timer" /etc/systemd/system/
-sudo cp "$DIR/wifi-wowlan.service" /etc/systemd/system/
 
 sudo systemctl daemon-reload
 
@@ -51,13 +50,8 @@ sudo systemctl enable wifi-sleep.timer
 sudo systemctl start wifi-sleep.timer
 
 # 6. Enable schedule check on boot (suspends if outside hours)
-echo "[6/7] Enabling boot guard..."
+echo "[6/6] Enabling boot guard..."
 sudo systemctl enable wifi-schedule.service
-
-# 7. Enable Wake-on-WLAN
-echo "[7/7] Enabling Wake-on-WLAN..."
-sudo systemctl enable wifi-wowlan.service
-sudo systemctl start wifi-wowlan.service
 
 # NOTE: Do NOT restart systemd-logind here — it kills the active session.
 # The lid switch setting takes effect on next reboot.
@@ -73,7 +67,6 @@ echo "  Services:"
 echo "    wifi-timer.service    — web app (auto-start on boot)"
 echo "    wifi-sleep.timer      — suspend at 22:00 daily"
 echo "    wifi-schedule.service — boot guard (sleep if outside hours)"
-echo "    wifi-wowlan.service   — enable Wake-on-WLAN at boot"
 echo ""
 echo "  Lid close: lock screen (takes effect after reboot)"
 echo ""

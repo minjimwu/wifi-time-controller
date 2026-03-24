@@ -53,7 +53,8 @@ wifi-time-controller/
 ├── wifi-timer.service      # systemd: web app service (template)
 ├── wifi-schedule.service   # systemd: boot guard (template)
 ├── wifi-sleep.service      # systemd: suspend trigger (template)
-└── wifi-sleep.timer        # systemd: fires at 22:00 daily
+├── wifi-sleep.timer        # systemd: fires at 22:00 daily
+└── architecture.svg        # Architecture diagram
 ```
 
 ## Configuration
