@@ -1,0 +1,9 @@
+[Unit]
+Description=Suspend computer at 22:00 daily
+
+[Timer]
+OnCalendar=*-*-* 22:00:00
+Persistent=true
+
+[Install]
+WantedBy=timers.target

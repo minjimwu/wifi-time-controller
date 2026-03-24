@@ -1,0 +1,15 @@
+[Unit]
+Description=WiFi Time Controller
+After=network-online.target NetworkManager.service
+Wants=network-online.target
+
+[Service]
+Type=simple
+WorkingDirectory=INSTALL_DIR
+ExecStart=/usr/bin/python3 INSTALL_DIR/app.py
+ExecStopPost=/usr/sbin/iptables -D FORWARD -i HOTSPOT_IFACE -j DROP
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

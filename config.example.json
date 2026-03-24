@@ -1,0 +1,19 @@
+{
+    "connection_name": "my-hotspot",
+    "hotspot_iface": "wlxXXXXXXXXXXXX",
+    "usb_device": "1-4",
+    "desktop_user": "your-username",
+    "online_minutes": 40,
+    "offline_minutes": 15,
+    "voice_alerts": [10, 5, 1],
+    "port": 80,
+    "schedule": {
+        "mon": {"start": "16:00", "end": "22:00"},
+        "tue": {"start": "16:00", "end": "22:00"},
+        "wed": {"start": "16:00", "end": "22:00"},
+        "thu": {"start": "16:00", "end": "22:00"},
+        "fri": {"start": "16:00", "end": "22:00"},
+        "sat": {"start": "07:00", "end": "22:00"},
+        "sun": {"start": "07:00", "end": "22:00"}
+    }
+}

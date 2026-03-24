@@ -1,0 +1,12 @@
+[Unit]
+Description=Enable Wake-on-WLAN for internal WiFi
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+ExecStart=/usr/sbin/iw phy0 wowlan enable magic-packet
+RemainAfterExit=yes
+
+[Install]
+WantedBy=multi-user.target

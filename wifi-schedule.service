@@ -1,0 +1,10 @@
+[Unit]
+Description=WiFi Schedule - check if outside hours and suspend
+After=network-online.target
+
+[Service]
+Type=oneshot
+ExecStart=/usr/bin/python3 INSTALL_DIR/schedule.py check
+
+[Install]
+WantedBy=multi-user.target

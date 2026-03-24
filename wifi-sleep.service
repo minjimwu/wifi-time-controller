@@ -1,0 +1,6 @@
+[Unit]
+Description=WiFi Schedule - suspend at end of schedule
+
+[Service]
+Type=oneshot
+ExecStart=/usr/bin/python3 INSTALL_DIR/schedule.py sleep
