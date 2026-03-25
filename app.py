@@ -140,6 +140,7 @@ def watchdog_loop():
                 if "rtw88" in line and (
                     "failed to get tx report" in line
                     or "failed to download firmware" in line
+                    or "failed to download drv rsvd page" in line
                     or "failed to leave" in line
                 )
             ]
