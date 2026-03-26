@@ -17,17 +17,16 @@ echo "[2/6] Configuring power settings..."
 sudo sed -i 's/^#\?HandleLidSwitch=.*/HandleLidSwitch=lock/' /etc/systemd/logind.conf
 sudo sed -i 's/^#\?HandleLidSwitchExternalPower=.*/HandleLidSwitchExternalPower=lock/' /etc/systemd/logind.conf
 
-# Disable GNOME auto-suspend (overrides logind for desktop sessions)
+# Disable XFCE auto-suspend (lid close → lock, no inactivity sleep)
 SUDO_USER_NAME="${SUDO_USER:-$USER}"
-DBUS="unix:path=/run/user/$(id -u "$SUDO_USER_NAME")/bus"
-sudo -u "$SUDO_USER_NAME" DBUS_SESSION_BUS_ADDRESS="$DBUS" \
-    gsettings set org.gnome.settings-daemon.plugins.power lid-close-ac-action 'nothing' 2>/dev/null || true
-sudo -u "$SUDO_USER_NAME" DBUS_SESSION_BUS_ADDRESS="$DBUS" \
-    gsettings set org.gnome.settings-daemon.plugins.power lid-close-battery-action 'nothing' 2>/dev/null || true
-sudo -u "$SUDO_USER_NAME" DBUS_SESSION_BUS_ADDRESS="$DBUS" \
-    gsettings set org.gnome.settings-daemon.plugins.power sleep-inactive-battery-timeout 0 2>/dev/null || true
-sudo -u "$SUDO_USER_NAME" DBUS_SESSION_BUS_ADDRESS="$DBUS" \
-    gsettings set org.gnome.settings-daemon.plugins.power sleep-inactive-ac-timeout 0 2>/dev/null || true
+sudo -u "$SUDO_USER_NAME" xfconf-query -c xfce4-power-manager \
+    -p /xfce4-power-manager/lid-action-on-ac -n -t int -s 3 2>/dev/null || true
+sudo -u "$SUDO_USER_NAME" xfconf-query -c xfce4-power-manager \
+    -p /xfce4-power-manager/lid-action-on-battery -n -t int -s 3 2>/dev/null || true
+sudo -u "$SUDO_USER_NAME" xfconf-query -c xfce4-power-manager \
+    -p /xfce4-power-manager/inactivity-on-ac -n -t int -s 0 2>/dev/null || true
+sudo -u "$SUDO_USER_NAME" xfconf-query -c xfce4-power-manager \
+    -p /xfce4-power-manager/inactivity-on-battery -n -t int -s 0 2>/dev/null || true
 
 # 3. Install systemd units (replace placeholders with actual paths/values)
 echo "[3/6] Installing systemd units..."

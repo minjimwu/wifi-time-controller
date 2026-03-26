@@ -37,17 +37,16 @@ sudo sed -i 's/^HandleLidSwitchExternalPower=lock/#HandleLidSwitchExternalPower=
 # NOTE: Do NOT restart systemd-logind — it kills the active session.
 # The logind lid switch setting takes effect on next reboot.
 
-# Restore GNOME power defaults
+# Restore XFCE power defaults (lid close → suspend, inactivity timeout → 15min)
 SUDO_USER_NAME="${SUDO_USER:-$USER}"
-DBUS="unix:path=/run/user/$(id -u "$SUDO_USER_NAME")/bus"
-sudo -u "$SUDO_USER_NAME" DBUS_SESSION_BUS_ADDRESS="$DBUS" \
-    gsettings set org.gnome.settings-daemon.plugins.power lid-close-ac-action 'suspend' 2>/dev/null || true
-sudo -u "$SUDO_USER_NAME" DBUS_SESSION_BUS_ADDRESS="$DBUS" \
-    gsettings set org.gnome.settings-daemon.plugins.power lid-close-battery-action 'suspend' 2>/dev/null || true
-sudo -u "$SUDO_USER_NAME" DBUS_SESSION_BUS_ADDRESS="$DBUS" \
-    gsettings set org.gnome.settings-daemon.plugins.power sleep-inactive-battery-timeout 900 2>/dev/null || true
-sudo -u "$SUDO_USER_NAME" DBUS_SESSION_BUS_ADDRESS="$DBUS" \
-    gsettings set org.gnome.settings-daemon.plugins.power sleep-inactive-ac-timeout 0 2>/dev/null || true
+sudo -u "$SUDO_USER_NAME" xfconf-query -c xfce4-power-manager \
+    -p /xfce4-power-manager/lid-action-on-ac -n -t int -s 1 2>/dev/null || true
+sudo -u "$SUDO_USER_NAME" xfconf-query -c xfce4-power-manager \
+    -p /xfce4-power-manager/lid-action-on-battery -n -t int -s 1 2>/dev/null || true
+sudo -u "$SUDO_USER_NAME" xfconf-query -c xfce4-power-manager \
+    -p /xfce4-power-manager/inactivity-on-ac -n -t int -s 0 2>/dev/null || true
+sudo -u "$SUDO_USER_NAME" xfconf-query -c xfce4-power-manager \
+    -p /xfce4-power-manager/inactivity-on-battery -n -t int -s 15 2>/dev/null || true
 
 echo ""
 echo "==========================================="
