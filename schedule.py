@@ -12,10 +12,14 @@ import json
 import os
 import subprocess
 import sys
+import time
 from datetime import datetime, timedelta
 
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 CONFIG_PATH = os.path.join(SCRIPT_DIR, "config.json")
+
+with open(CONFIG_PATH) as _f:
+    CONFIG = json.load(_f)
 
 DAYS = ["mon", "tue", "wed", "thu", "fri", "sat", "sun"]
 
@@ -98,10 +102,20 @@ def main():
             remaining = seconds_until_end(now, schedule)
             print(f"In schedule. {remaining // 60} minutes remaining today.")
         else:
+            grace = CONFIG.get("boot_guard_grace_minutes", 60)
             wake = next_wake_time(now, schedule)
             if wake:
-                print(f"Outside schedule. Suspending until {wake.strftime('%A %H:%M')}")
-                suspend_until(wake)
+                print(f"Outside schedule. Grace period: {grace} minutes before suspend.")
+                print(f"Will suspend at {(now + timedelta(minutes=grace)).strftime('%H:%M')} → wake at {wake.strftime('%A %H:%M')}")
+                time.sleep(grace * 60)
+                # Re-check: maybe we're now inside schedule
+                now2 = datetime.now()
+                if is_in_schedule(now2, load_schedule()):
+                    print("Now inside schedule. Staying awake.")
+                else:
+                    wake2 = next_wake_time(now2, load_schedule())
+                    if wake2:
+                        suspend_until(wake2)
             else:
                 print("No schedule found, staying awake.")
 

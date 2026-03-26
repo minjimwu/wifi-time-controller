@@ -90,7 +90,7 @@ cp config.example.json config.json
 | Field | Description |
 |---|---|
 | `connection_name` | NetworkManager connection name for the hotspot |
-| `hotspot_iface` | USB WiFi adapter interface name (find with `ip link show`) |
+| `hotspot_iface` | USB WiFi adapter interface name (find with `ip link show`). **Note:** interface names (e.g. `wlan0`, `wlan2`) can change after kernel/driver updates — if the hotspot stops working after an update, verify the interface name matches |
 | `usb_device` | USB bus-port (find with `lsusb` or check `dmesg`) |
 | `desktop_user` | Linux desktop username (for voice alerts via PipeWire/PulseAudio) |
 | `online_minutes` | How long internet is allowed after clicking Start |
@@ -185,6 +185,35 @@ The installer configures lid close to **lock the screen** instead of suspending:
 - Closing the lid → screen locks, computer stays running.
 - The hotspot and web app continue to work with the lid closed.
 - Suspend only happens at the scheduled end time via the timer.
+
+#### Lid Wake vs RTC Wake
+
+By default, opening the laptop lid will wake the computer from suspend — **even if the RTC alarm hasn't fired yet**. This means if the computer is suspended until 16:00 but someone opens the lid at 04:00, it wakes up immediately.
+
+To prevent this, disable the LID ACPI wake source:
+
+```bash
+# Disable (takes effect immediately, resets on reboot)
+echo LID | sudo tee /proc/acpi/wakeup
+
+# To make it permanent, create a systemd service:
+sudo tee /etc/systemd/system/disable-lid-wakeup.service > /dev/null << 'EOF'
+[Unit]
+Description=Disable LID as ACPI wake source
+After=multi-user.target
+
+[Service]
+Type=oneshot
+ExecStart=/bin/bash -c 'grep -q "LID.*enabled" /proc/acpi/wakeup && echo LID > /proc/acpi/wakeup || true'
+
+[Install]
+WantedBy=multi-user.target
+EOF
+
+sudo systemctl enable disable-lid-wakeup.service
+```
+
+With LID wake disabled, the computer can only be woken by the **RTC alarm** (scheduled wake) or the **power button**.
 
 ### USB WiFi Watchdog
 
