@@ -34,18 +34,14 @@ state_lock = threading.Lock()
 
 
 def speak(text: str):
-    """Speak text via spd-say using the desktop user's audio session."""
+    """Speak text via spd-say using the desktop user's systemd session."""
     if not DESKTOP_USER:
         return
     def _speak():
         try:
-            import pwd
-            uid = str(pwd.getpwnam(DESKTOP_USER).pw_uid)
             subprocess.run(
-                ["sudo", "-u", DESKTOP_USER,
-                 "env", f"XDG_RUNTIME_DIR=/run/user/{uid}",
-                 f"DBUS_SESSION_BUS_ADDRESS=unix:path=/run/user/{uid}/bus",
-                 "spd-say", "-w", text],
+                ["systemd-run", "--user", "-M", f"{DESKTOP_USER}@",
+                 "--pipe", "--wait", "spd-say", "-w", text],
                 stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, timeout=30,
             )
         except Exception as e:
