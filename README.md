@@ -328,6 +328,27 @@ The system uses `spd-say` (speech-dispatcher) for voice announcements. Set `desk
 
 Configure which alerts fire via `voice_alerts` in `config.json`.
 
+### PipeWire loses audio after suspend/resume
+
+On some Linux systems, PipeWire fails to re-detect audio hardware after a suspend/resume cycle, falling back to a **Dummy Output**. This silently breaks voice alerts.
+
+**Fix:** Create a system-sleep hook to restart PipeWire on resume:
+
+```bash
+sudo tee /usr/lib/systemd/system-sleep/restart-pipewire.sh > /dev/null << 'EOF'
+#!/bin/bash
+if [ "$1" = "post" ]; then
+    sleep 3
+    sudo -u YOUR_USER XDG_RUNTIME_DIR=/run/user/YOUR_UID \
+        DBUS_SESSION_BUS_ADDRESS=unix:path=/run/user/YOUR_UID/bus \
+        systemctl --user restart pipewire pipewire-pulse wireplumber
+fi
+EOF
+sudo chmod +x /usr/lib/systemd/system-sleep/restart-pipewire.sh
+```
+
+Replace `YOUR_USER` and `YOUR_UID` with the desktop user and their UID (e.g. `id -u kali`).
+
 ## Security
 
 - **WPA2-PSK** encryption on the hotspot
