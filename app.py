@@ -161,11 +161,18 @@ def watchdog_loop():
                 last_check = time.monotonic()
                 continue
 
-            # TX stall detection — AP should always send beacon frames
+            # TX stall detection — only meaningful when clients are connected
+            # (beacons don't increment tx_packets on rtw88 drivers)
             try:
+                station_result = subprocess.run(
+                    ["iw", "dev", HOTSPOT_IFACE, "station", "dump"],
+                    capture_output=True, text=True, timeout=5,
+                )
+                has_clients = "Station" in station_result.stdout
+
                 with open(f"/sys/class/net/{HOTSPOT_IFACE}/statistics/tx_packets") as f:
                     tx_packets = int(f.read().strip())
-                if last_tx_packets >= 0 and tx_packets == last_tx_packets:
+                if has_clients and last_tx_packets >= 0 and tx_packets == last_tx_packets:
                     tx_stall_count += 1
                     if tx_stall_count >= TX_STALL_THRESHOLD:
                         print(f"WATCHDOG: TX stall detected ({tx_stall_count} checks, tx_packets={tx_packets}), resetting adapter...")
