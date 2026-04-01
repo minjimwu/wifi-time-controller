@@ -106,15 +106,12 @@ def usb_reset():
 
 
 def watchdog_loop():
-    """Monitor dmesg for firmware errors and TX stalls, auto-reset the USB adapter."""
+    """Monitor dmesg for firmware errors, auto-reset the USB adapter."""
     error_count = 0
     CHECK_INTERVAL = 10  # seconds between checks
     ERROR_THRESHOLD = 3  # errors to trigger reset
-    TX_STALL_THRESHOLD = 6  # consecutive stale TX checks before reset (~60s)
     COOLDOWN = 120       # seconds after reset before checking again
     last_check = time.monotonic()
-    last_tx_packets = -1
-    tx_stall_count = 0
 
     while True:
         time.sleep(CHECK_INTERVAL)
@@ -125,8 +122,6 @@ def watchdog_loop():
         last_check = now
         if elapsed > CHECK_INTERVAL * 3:
             error_count = 0
-            last_tx_packets = -1
-            tx_stall_count = 0
             print(f"WATCHDOG: Resume from suspend detected ({int(elapsed)}s gap), skipping check")
             continue
 
@@ -155,38 +150,10 @@ def watchdog_loop():
                 print(f"WATCHDOG: Error threshold reached ({error_count}), resetting adapter...")
                 usb_reset()
                 error_count = 0
-                last_tx_packets = -1
-                tx_stall_count = 0
                 time.sleep(COOLDOWN)  # cooldown after reset
                 last_check = time.monotonic()
                 continue
 
-            # TX stall detection — only meaningful when clients are connected
-            # (beacons don't increment tx_packets on rtw88 drivers)
-            try:
-                station_result = subprocess.run(
-                    ["iw", "dev", HOTSPOT_IFACE, "station", "dump"],
-                    capture_output=True, text=True, timeout=5,
-                )
-                has_clients = "Station" in station_result.stdout
-
-                with open(f"/sys/class/net/{HOTSPOT_IFACE}/statistics/tx_packets") as f:
-                    tx_packets = int(f.read().strip())
-                if has_clients and last_tx_packets >= 0 and tx_packets == last_tx_packets:
-                    tx_stall_count += 1
-                    if tx_stall_count >= TX_STALL_THRESHOLD:
-                        print(f"WATCHDOG: TX stall detected ({tx_stall_count} checks, tx_packets={tx_packets}), resetting adapter...")
-                        usb_reset()
-                        tx_stall_count = 0
-                        error_count = 0
-                        last_tx_packets = -1
-                        time.sleep(COOLDOWN)
-                        last_check = time.monotonic()
-                else:
-                    tx_stall_count = 0
-                last_tx_packets = tx_packets
-            except FileNotFoundError:
-                last_tx_packets = -1  # interface gone, will recover after rebind
 
         except Exception as e:
             print(f"WATCHDOG: check failed: {e}")
