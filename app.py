@@ -106,10 +106,12 @@ def usb_reset():
 
 
 def watchdog_loop():
-    """Monitor dmesg for firmware errors, auto-reset the USB adapter."""
+    """Monitor firmware errors and stuck clients, auto-reset the USB adapter."""
     error_count = 0
+    stuck_count = 0
     CHECK_INTERVAL = 10  # seconds between checks
-    ERROR_THRESHOLD = 3  # errors to trigger reset
+    ERROR_THRESHOLD = 3  # firmware errors to trigger reset
+    STUCK_THRESHOLD = 3  # consecutive checks with stuck clients (~30s)
     COOLDOWN = 120       # seconds after reset before checking again
     last_check = time.monotonic()
 
@@ -122,6 +124,7 @@ def watchdog_loop():
         last_check = now
         if elapsed > CHECK_INTERVAL * 3:
             error_count = 0
+            stuck_count = 0
             print(f"WATCHDOG: Resume from suspend detected ({int(elapsed)}s gap), skipping check")
             continue
 
@@ -150,10 +153,36 @@ def watchdog_loop():
                 print(f"WATCHDOG: Error threshold reached ({error_count}), resetting adapter...")
                 usb_reset()
                 error_count = 0
-                time.sleep(COOLDOWN)  # cooldown after reset
+                stuck_count = 0
+                time.sleep(COOLDOWN)
                 last_check = time.monotonic()
                 continue
 
+            # Stuck client detection — clients visible but none authenticated
+            # AND recent firmware errors means adapter is broken (broadcasting
+            # SSID but can't complete WPA handshake). Requires both conditions
+            # to avoid false resets from wrong-password attempts.
+            try:
+                station_result = subprocess.run(
+                    ["iw", "dev", HOTSPOT_IFACE, "station", "dump"],
+                    capture_output=True, text=True, timeout=5,
+                )
+                output = station_result.stdout
+                has_stations = "Station" in output
+                all_unauth = has_stations and "authorized:\tyes" not in output
+                if all_unauth and error_count > 0:
+                    stuck_count += 1
+                    if stuck_count >= STUCK_THRESHOLD:
+                        print(f"WATCHDOG: Stuck clients with firmware errors detected ({stuck_count} checks), resetting adapter...")
+                        usb_reset()
+                        error_count = 0
+                        stuck_count = 0
+                        time.sleep(COOLDOWN)
+                        last_check = time.monotonic()
+                else:
+                    stuck_count = 0
+            except Exception:
+                pass
 
         except Exception as e:
             print(f"WATCHDOG: check failed: {e}")
