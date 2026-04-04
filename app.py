@@ -110,8 +110,8 @@ def watchdog_loop():
     error_count = 0
     stuck_count = 0
     CHECK_INTERVAL = 10  # seconds between checks
-    ERROR_THRESHOLD = 3  # firmware errors to trigger reset
-    STUCK_THRESHOLD = 3  # consecutive checks with stuck clients (~30s)
+    ERROR_THRESHOLD = 3  # firmware errors to trigger immediate reset
+    STUCK_THRESHOLD = 6  # consecutive checks with stuck clients (~60s)
     COOLDOWN = 120       # seconds after reset before checking again
     last_check = time.monotonic()
 
@@ -158,10 +158,10 @@ def watchdog_loop():
                 last_check = time.monotonic()
                 continue
 
-            # Stuck client detection — clients visible but none authenticated
-            # AND recent firmware errors means adapter is broken (broadcasting
-            # SSID but can't complete WPA handshake). Requires both conditions
-            # to avoid false resets from wrong-password attempts.
+            # Stuck client detection — if clients are visible but none can
+            # authenticate for 60s, the adapter is broken. Wrong-password
+            # clients typically disconnect within seconds, so 60s rules
+            # those out without needing to check firmware errors.
             try:
                 station_result = subprocess.run(
                     ["iw", "dev", HOTSPOT_IFACE, "station", "dump"],
@@ -170,10 +170,10 @@ def watchdog_loop():
                 output = station_result.stdout
                 has_stations = "Station" in output
                 all_unauth = has_stations and "authorized:\tyes" not in output
-                if all_unauth and error_count > 0:
+                if all_unauth:
                     stuck_count += 1
                     if stuck_count >= STUCK_THRESHOLD:
-                        print(f"WATCHDOG: Stuck clients with firmware errors detected ({stuck_count} checks), resetting adapter...")
+                        print(f"WATCHDOG: Stuck clients detected for {stuck_count * CHECK_INTERVAL}s, resetting adapter...")
                         usb_reset()
                         error_count = 0
                         stuck_count = 0
