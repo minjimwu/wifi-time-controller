@@ -222,10 +222,19 @@ def timer_loop():
         alerted.clear()
         with state_lock:
             if state["phase"] == "online":
-                speak("Time is up. WiFi paused.")
-                block_internet()
-                state["phase"] = "offline"
-                state["end_time"] = time.time() + state["offline_mins"] * 60
+                # If end_time was long ago (e.g. system suspended during
+                # online phase), skip cooldown and go straight to idle
+                overdue = time.time() - state["end_time"]
+                if overdue > state["offline_mins"] * 60:
+                    print(f"Online phase expired {int(overdue)}s ago (suspend?), skipping cooldown")
+                    block_internet()
+                    state["phase"] = "idle"
+                    state["end_time"] = 0
+                else:
+                    speak("Time is up. WiFi paused.")
+                    block_internet()
+                    state["phase"] = "offline"
+                    state["end_time"] = time.time() + state["offline_mins"] * 60
             elif state["phase"] == "offline":
                 # Stay blocked — user must click Start for internet
                 state["phase"] = "idle"
